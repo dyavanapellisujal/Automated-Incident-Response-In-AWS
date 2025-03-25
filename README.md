@@ -1,1 +1,1 @@
-# AWS-Three-Tier-Blog-App
+Automated Threat Detection with AWS Services
