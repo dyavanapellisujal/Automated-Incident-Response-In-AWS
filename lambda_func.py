@@ -10,7 +10,6 @@ resp = "No remediation performed"
 
 
 def lambda_handler(event, context):
-    # Using {} as the default for "detail" to avoid NoneType errors
     finding_type = event.get("Type", "Type field not found")
     description= event.get("Description", "Description field not found")
     severity = event.get("Severity", "Severity field not found")
