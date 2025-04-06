@@ -4,7 +4,6 @@ import boto3
 import ipaddress
 iam_client=boto3.client("iam")
 client = boto3.client("ec2")
-#This json file is to keep track of the rule number that is being created. This is to avoid the same rule number being created again and again.
 ssm_client= boto3.client("ssm")
 resp = "No remediation performed"
 
@@ -32,7 +31,7 @@ def lambda_handler(event, context):
         resp = remediate_InstanceCredentialExfiltrationOutsideAWS(instance_id, attacker_ip,description,severity,finding_type,access_key_role)
     return {
         "statusCode": 200,
-        "body": json.dumps({"finding_type": finding_type})
+        "body": json.dumps({"resp": resp})
     }
 
 
@@ -93,17 +92,16 @@ def remediate_InstanceCredentialExfiltrationOutsideAWS(instance_id,attacker_ip,d
         
 
 
-    #This will modify the instance metadata service to V2.
+    
 
-    if imds_modify(instance_id=instance_id):
+    if imds_modify(instance_id=instance_id): #This will modify the instance metadata service to V2.
         imds_modified = "Successfully modified IMDS to v2"
         
     else:
         imds_modified = "Could not modify IMDS to v2"
     
 
-    #THe below code will first get the association id then dissociate i.e detach the role from the ec2 instance and then attach the role again to ec2 instance
-    #This will rotate the temporary credentials which is by default rotated after 6 hours
+    #THe below code will detach the compromised role and then atTach the backup role created beforehand assuming this situation.
 
     if reattach_iam_policy(instance_id=instance_id, access_key_role=access_key_role):
         reattach_iam_policy_status = "Successfully reattached the IAM role to the instance"
@@ -111,11 +109,11 @@ def remediate_InstanceCredentialExfiltrationOutsideAWS(instance_id,attacker_ip,d
         reattach_iam_policy_status = "Could not reattach the IAM role to the instance"
 
 
-    
+    #The below code is to send the alert via sns to security team : that is me in this case 
     sns_client = boto3.client('sns')
     sns_topic_arn = 'arn:aws:sns:us-east-1:975688691050:Unauthorized_Access_IAMUser'
 
-    message = (
+    message = ( 
         f"🔐 *IAM Role Credentials Compromised*\n\n"
         f"📌 *Finding Details:*\n"
         f"• Type: {finding_type}\n"
@@ -143,7 +141,7 @@ def add_nacl_rule_entry(nacl_id,port_range,egress,cidr_block,rule_number):
         response = client.create_network_acl_entry(
         NetworkAclId=nacl_id,
         RuleNumber=rule_number,
-        Protocol='-1',  # -1 for all, 6 for TCP, 17 for UDP
+        Protocol='-1',  # -1 for all the Protocols, 6 for TCP, 17 for UDP
         RuleAction="deny",
         Egress=egress,  #if false it will add as an inbound rule, if true then it will add as an outbound rule
         CidrBlock=cidr_block,
@@ -158,7 +156,8 @@ def add_nacl_rule_entry(nacl_id,port_range,egress,cidr_block,rule_number):
      except Exception as e:
         print(e)
         return False
-
+         
+''' This function will go through all instances using IMDSv1 and modify them to IMDSv2'''
 def imds_modify(instance_id):
     
     try:
@@ -187,7 +186,8 @@ def imds_modify(instance_id):
         return False
 
 
-
+'''This function will Creates new instance profile for the backup role if not exists and adds the role to that instance profile 
+then will get the role and check the instances using the compromised role, adds them to a LisT and then iterates over the list to detach the role and attach the new one to the instances. ''' 
 def reattach_iam_policy(instance_id,access_key_role):
    
     try:    
@@ -198,9 +198,9 @@ def reattach_iam_policy(instance_id,access_key_role):
         # Step 1: Ensure instance profile exists
         try:
             iam_client.create_instance_profile(InstanceProfileName=profile_name)
-            print(f"✅ Created instance profile: {profile_name}")
+            print(f" Created instance profile: {profile_name}")
         except iam_client.exceptions.EntityAlreadyExistsException:
-            print(f"ℹ️ Instance profile {profile_name} already exists. Skipping creation.")
+            print(f"Instance profile {profile_name} already exists. Skipping creation.")
 
         # Step 2: Ensure role is attached to instance profile
         response = iam_client.get_instance_profile(InstanceProfileName=profile_name)
@@ -213,11 +213,11 @@ def reattach_iam_policy(instance_id,access_key_role):
                     InstanceProfileName=profile_name,
                     RoleName=role_name
                 )
-                print(f"✅ Added role {role_name} to instance profile {profile_name}")
+                print(f" Added role {role_name} to instance profile {profile_name}")
             except iam_client.exceptions.LimitExceededException:
-                print(f"⚠️ Cannot add more roles to instance profile {profile_name}")
+                print(f" Cannot add more roles to instance profile {profile_name}")
         else:
-            print(f"ℹ️ Role {role_name} is already attached to instance profile {profile_name}")
+            print(f"Role {role_name} is already attached to instance profile {profile_name}")
 
         # Step 3: Find instances using the original role
         matching_instances = []
@@ -245,7 +245,7 @@ def reattach_iam_policy(instance_id,access_key_role):
                 client.disassociate_iam_instance_profile(
                     AssociationId=association_id
                 )
-                print(f"🔄 Disassociated profile from instance: {instance_id}")
+                print(f" Disassociated profile from instance: {instance_id}")
 
                 client.associate_iam_instance_profile(
                     IamInstanceProfile={'Name': profile_name},
@@ -275,9 +275,9 @@ def delete_iam_role(role_name):
                     InstanceProfileName=profile_name,
                     RoleName=role_name
                 )
-                print(f"🧹 Removed role {role_name} from instance profile: {profile_name}")
+                print(f" Removed role {role_name} from instance profile: {profile_name}")
             except Exception as e:
-                print(f"⚠️ Failed to remove role from profile {profile_name}: {e}")
+                print(f" Failed to remove role from profile {profile_name}: {e}")
 
         # Step 1: Detach all managed policies
         attached_policies = iam_client.list_attached_role_policies(RoleName=role_name)
@@ -286,7 +286,7 @@ def delete_iam_role(role_name):
                 RoleName=role_name,
                 PolicyArn=policy['PolicyArn']
             )
-            print(f"🔌 Detached policy: {policy['PolicyArn']}")
+            print(f"Detached policy: {policy['PolicyArn']}")
 
         # Step 2: Delete all inline policies
         inline_policies = iam_client.list_role_policies(RoleName=role_name)
@@ -295,22 +295,18 @@ def delete_iam_role(role_name):
                 RoleName=role_name,
                 PolicyName=policy_name
             )
-            print(f"🗑️ Deleted inline policy: {policy_name}")
+            print(f" Deleted inline policy: {policy_name}")
 
         # Step 3: Delete the role
         iam_client.delete_role(RoleName=role_name)
-        print(f"✅ Deleted IAM role: {role_name}")
+        print(f"Deleted IAM role: {role_name}")
 
     except iam_client.exceptions.NoSuchEntityException:
-        print(f"⚠️ Role {role_name} does not exist.")
+        print(f" Role {role_name} does not exist.")
     except Exception as e:
-        print(f"❌ Failed to delete role {role_name}: {str(e)}")
-
-# Example usage
+        print(f" Failed to delete role {role_name}: {str(e)}")
 
 
-
-#increase the rule number and then update the json file
 
 
 
