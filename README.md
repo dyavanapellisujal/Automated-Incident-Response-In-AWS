@@ -1,3 +1,4 @@
 Automated Incident Response - AWS
 
-![Automated Threat Detection with AWS drawio](https://github.com/user-attachments/assets/d9b039d2-437a-4697-b48b-1ce373bc7e76)
+
+![Automated Threat Detection with AWS drawio (1)](https://github.com/user-attachments/assets/8392f8e3-f429-4d5e-b210-cb00768353b8)
