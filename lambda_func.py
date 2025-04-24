@@ -48,7 +48,7 @@ def is_ipv6(ip):
 
 def remediate_InstanceCredentialExfiltrationOutsideAWS(instance_id,attacker_ip,description,severity,finding_type,access_key_role):
     sns_client = boto3.client('sns')
-    sns_topic_arn = 'arn:aws:sns:us-east-1:975688691050:Unauthorized_Access_IAMUser'
+    sns_topic_arn = 'arn:aws:sns:us-east-1:youraccountnumber:Unauthorized_Access_IAMUser'
      sns_client.publish(
         TopicArn=sns_topic_arn,
         Message="Lambda triggered",
@@ -110,7 +110,7 @@ def remediate_InstanceCredentialExfiltrationOutsideAWS(instance_id,attacker_ip,d
 
     #The below code is to send the alert via sns to security team : that is me in this case 
     sns_client = boto3.client('sns')
-    sns_topic_arn = 'arn:aws:sns:us-east-1:975688691050:Unauthorized_Access_IAMUser'
+    sns_topic_arn = 'arn:aws:sns:us-east-1:youraccountnumber:Unauthorized_Access_IAMUser'
 
     message = ( 
         f"🔐 *IAM Role Credentials Compromised*\n\n"
