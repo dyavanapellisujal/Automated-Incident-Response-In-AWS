@@ -7,4 +7,5 @@ You can find the complete blog on medium: https://medium.com/@dyavanapellisujal7
 
 
 
-Note: The terraform project needs some configurations like modifying the IAM policies you need to replace the fields "youraccountid" with your actual account number
+**Note: The terraform project needs some configurations like modifying the IAM policies you need to replace the fields "youraccountid" with your actual account number. Also the sns topic arn in the lambda code also need to be configured with your accountid.
+**
