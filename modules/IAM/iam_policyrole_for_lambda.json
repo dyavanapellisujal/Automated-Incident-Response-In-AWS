@@ -1,0 +1,84 @@
+{
+    "Version": "2012-10-17",
+    "Statement": [
+     {
+      "Sid": "Modifyec2andSNSPublish",
+      "Effect": "Allow",
+      "Action": [
+       "ec2:ModifyInstanceMetadataOptions",
+       "sns:Publish",
+       "ec2:DisassociateIamInstanceProfile",
+       "ec2:ModifyInstanceAttribute",
+       "ec2:AssociateIamInstanceProfile"
+      ],
+      "Resource": [
+       "arn:aws:sns:us-east-1:975688691050:Unauthorized_Access_IAMUser",
+       "arn:aws:ec2:us-east-1:975688691050:instance/*",
+       "arn:aws:ec2:us-east-1:975688691050:security-group/*"
+      ]
+     },
+     {
+      "Sid": "Describeproperties",
+      "Effect": "Allow",
+      "Action": [
+       "ec2:DescribeInstances",
+       "ec2:DescribeIamInstanceProfileAssociations",
+       "ec2:DescribeNetworkAcls",
+       "ec2:DescribeSecurityGroups",
+       "ec2:DescribeInstanceStatus"
+      ],
+      "Resource": "*"
+     },
+     {
+      "Sid": "SecurityGroupandNACL",
+      "Effect": "Allow",
+      "Action": [
+       "ec2:RevokeSecurityGroupIngress",
+       "ec2:AuthorizeSecurityGroupEgress",
+       "ec2:AuthorizeSecurityGroupIngress",
+       "ec2:RevokeSecurityGroupEgress",
+       "ec2:CreateNetworkAclEntry",
+       "ec2:DeleteNetworkAclEntry"
+      ],
+      "Resource": [
+       "arn:aws:ec2:us-east-1:975688691050:security-group/*",
+       "arn:aws:ec2:us-east-1:975688691050:network-acl/*",
+       "arn:aws:ec2:us-east-1:975688691050:security-group-rule/*"
+      ]
+     },
+     {
+      "Sid": "Passrole",
+      "Effect": "Allow",
+      "Action": "iam:PassRole",
+      "Resource": "arn:aws:iam::975688691050:role/*",
+      "Condition": {
+       "StringEquals": {
+        "iam:PassedToService": "ec2.amazonaws.com"
+       }
+      }
+     },
+     {
+      "Sid": "IAMandSSM",
+      "Effect": "Allow",
+      "Action": [
+       "iam:CreateInstanceProfile",
+       "iam:GetInstanceProfile",
+       "iam:ListAttachedRolePolicies",
+       "iam:ListRolePolicies",
+       "iam:AddRoleToInstanceProfile",
+       "iam:DetachRolePolicy",
+       "iam:DeleteRolePolicy",
+       "iam:DeleteRole",
+       "iam:ListInstanceProfilesForRole",
+       "iam:RemoveRoleFromInstanceProfile",
+       "ssm:PutParameter",
+       "ssm:GetParameter"
+      ],
+      "Resource": [
+       "arn:aws:iam::975688691050:instance-profile/*",
+       "arn:aws:iam::975688691050:role/*",
+       "arn:aws:ssm:us-east-1:975688691050:parameter/nacl/*"
+      ]
+     }
+    ]
+   }

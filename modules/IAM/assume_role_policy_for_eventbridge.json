@@ -1,0 +1,19 @@
+{
+    "Version": "2012-10-17",
+    "Statement": [
+        {
+            "Sid": "TrustEventBridgeService",
+            "Effect": "Allow",
+            "Principal": {
+                "Service": "events.amazonaws.com"
+            },
+            "Action": "sts:AssumeRole",
+            "Condition": {
+                "StringEquals": {
+                    "aws:SourceArn": "arn:aws:events:us-east-1:975688691050:rule/Unauthorized_access_IAM_rule",
+                    "aws:SourceAccount": "975688691050"
+                }
+            }
+        }
+    ]
+}

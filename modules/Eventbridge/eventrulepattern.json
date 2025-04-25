@@ -1,0 +1,11 @@
+{
+    "source": ["aws.guardduty"],
+    "detail": {
+      "type": [{
+        "prefix": "UnauthorizedAccess:IAMUser/"
+      }],
+      "severity": [{
+        "numeric": [">=", 7.0]
+      }]
+    }
+  }
